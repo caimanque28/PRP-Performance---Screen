@@ -184,12 +184,11 @@ export default function Login() {
           {mode === 'login' && (
             <div className="mt-8 pt-6 border-t border-white/5 text-center">
               <p className="text-slate-500 text-xs uppercase tracking-widest font-bold">
-                Credenciais de Demonstração
+                PRP Performance System
               </p>
-              <div className="mt-2 text-slate-400 text-sm">
-                <p>Admin: admin@prp.com / admin123</p>
-                <p>Avaliador: evaluator@prp.com / eval123</p>
-              </div>
+              <p className="mt-2 text-slate-400 text-sm">
+                Entre com suas credenciais para acessar a plataforma.
+              </p>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import EvaluationForm from '@/components/EvaluationForm';
 import EvaluationDashboard from '@/components/EvaluationDashboard';
+import EvaluationList from '@/components/EvaluationList';
 import SettingsModal from '@/components/SettingsModal';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
@@ -13,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function Page() {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [view, setView] = useState<'form' | 'dashboard'>('form');
+  const [view, setView] = useState<'form' | 'dashboard' | 'summary'>('summary');
   const [evaluationData, setEvaluationData] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -101,7 +102,39 @@ export default function Page() {
     }
   };
 
-  const handleBackToForm = () => {
+  const handleSelectEvaluation = (ev: any) => {
+    // Map database fields back to form data structure for the dashboard
+    const mappedData = {
+      name: ev.patient_name,
+      birthDate: ev.patient_birth_date,
+      age: ev.patient_age,
+      weight: ev.patient_weight,
+      height: ev.patient_height,
+      bmi: ev.patient_bmi,
+      bmiStatus: ev.patient_bmi_status,
+      sport: ev.patient_sport,
+      level: ev.patient_level,
+      volume: ev.patient_volume,
+      dominance: ev.patient_dominance,
+      complaint: ev.patient_complaint,
+      history: ev.patient_history,
+      meds: ev.patient_meds,
+      eva: ev.eva_score,
+      evalType: ev.eval_type,
+      scores: ev.scores,
+      observations: ev.observations,
+      patientId: ev.id.substring(0, 8),
+      evaluationDate: new Date(ev.created_at).toLocaleDateString('pt-BR'),
+    };
+    setEvaluationData(mappedData);
+    setView('dashboard');
+  };
+
+  const handleBackToSummary = () => {
+    setView('summary');
+  };
+
+  const handleNewEvaluation = () => {
     setView('form');
   };
 
@@ -130,8 +163,8 @@ export default function Page() {
       </div>
       <div className="relative z-10">
         <Header 
-        title={view === 'form' ? 'Avaliação Funcional' : 'Dashboard de Performance'} 
-        onProfileClick={() => alert('Perfil do Avaliador')}
+        title={view === 'form' ? 'Nova Avaliação' : view === 'summary' ? 'Histórico de Atletas' : 'Dashboard de Performance'} 
+        onProfileClick={() => setView('summary')}
         onSettingsClick={() => setIsSettingsOpen(true)}
       />
       
@@ -176,7 +209,20 @@ export default function Page() {
 
       <div className="container mx-auto">
         <AnimatePresence mode="wait">
-          {view === 'form' ? (
+          {view === 'summary' ? (
+            <motion.div
+              key="summary"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <EvaluationList 
+                onSelect={handleSelectEvaluation} 
+                onNew={handleNewEvaluation} 
+              />
+            </motion.div>
+          ) : view === 'form' ? (
             <motion.div
               key="form"
               initial={{ opacity: 0, y: 20 }}
@@ -196,7 +242,7 @@ export default function Page() {
             >
               <EvaluationDashboard 
                 data={evaluationData} 
-                onBack={handleBackToForm} 
+                onBack={handleBackToSummary} 
               />
             </motion.div>
           )}

@@ -101,16 +101,21 @@ export default function EvaluationDashboard({ data, onBack }: EvaluationDashboar
 
             props.forEach(prop => {
               const value = style.getPropertyValue(prop);
-              if (value && value.includes('oklch')) {
-                // Replace with safe fallbacks
+              if (value && (value.includes('oklch') || value.includes('var('))) {
+                // Replace with safe fallbacks for common Tailwind colors
                 if (prop.includes('background')) {
-                  element.style.setProperty(prop, '#ffffff', 'important');
+                  if (element.classList.contains('bg-blue-600')) element.style.backgroundColor = '#2563eb';
+                  else if (element.classList.contains('bg-slate-900')) element.style.backgroundColor = '#0f172a';
+                  else if (element.classList.contains('bg-white')) element.style.backgroundColor = '#ffffff';
+                  else element.style.setProperty(prop, '#ffffff', 'important');
                 } else if (prop.includes('border')) {
                   element.style.setProperty(prop, '#e2e8f0', 'important');
                 } else if (prop === 'fill' || prop === 'stroke') {
                   element.style.setProperty(prop, '#3b82f6', 'important');
-                } else {
-                  element.style.setProperty(prop, '#1e293b', 'important');
+                } else if (prop === 'color') {
+                  if (element.classList.contains('text-blue-600')) element.style.color = '#2563eb';
+                  else if (element.classList.contains('text-slate-900')) element.style.color = '#0f172a';
+                  else element.style.setProperty(prop, '#1e293b', 'important');
                 }
               }
             });
@@ -131,11 +136,30 @@ export default function EvaluationDashboard({ data, onBack }: EvaluationDashboar
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      // If the content is too long, we might need multiple pages, but for now let's scale to fit one page or split
+      if (pdfHeight > pdf.internal.pageSize.getHeight()) {
+        // Simple multi-page support
+        let heightLeft = pdfHeight;
+        let position = 0;
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - pdfHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+        }
+      } else {
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
+      
       pdf.save(`Relatorio_Avaliacao_${data?.name || 'Atleta'}_${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Ocorreu um erro ao gerar o relatório em PDF.');
+      alert('Ocorreu um erro ao gerar o relatório em PDF. Tente novamente.');
     } finally {
       setIsGeneratingPDF(false);
     }

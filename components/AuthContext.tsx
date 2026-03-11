@@ -209,14 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            { id: data.user.id, name, email, role }
-          ]);
-        
-        if (profileError) throw profileError;
+        // Profile is now created automatically by a database trigger
         return;
       }
     }

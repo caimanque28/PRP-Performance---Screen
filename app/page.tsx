@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { useAuth } from '@/components/AuthContext';
 import Login from '@/components/Login';
 import { supabase } from '@/lib/supabase';
+import { FMS_ITEMS, PRP_ITEMS } from '@/lib/constants';
 
 export default function Page() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -53,11 +54,64 @@ export default function Page() {
   const handleFormSubmit = async (data: any) => {
     setIsSaving(true);
     try {
+      // Calculate results
+      const items = data.evalType === 'FMS' ? FMS_ITEMS : PRP_ITEMS;
+      let totalScore = 0;
+      const scores = data.scores || {};
+      
+      items.forEach((item: any) => {
+        if (item.unilateral) {
+          const l = Number(scores[item.id]?.L ?? 0);
+          const r = Number(scores[item.id]?.R ?? 0);
+          totalScore += Math.min(l, r);
+        } else {
+          totalScore += Number(scores[item.id] ?? 0);
+        }
+      });
+
+      const maxScore = items.length * 3;
+      const percentage = (totalScore / maxScore) * 100;
+      const riskStatus = data.evalType === 'FMS' 
+        ? (totalScore <= 14 ? 'Risco Elevado' : 'Risco Baixo')
+        : (percentage < 70 ? 'Risco Elevado' : 'Risco Baixo');
+
       // If Supabase is configured, save to database
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && user) {
+        // 1. Find or create athlete
+        let athleteId = null;
+        const { data: athleteData } = await supabase
+          .from('athletes')
+          .select('id')
+          .eq('evaluator_id', user.id)
+          .eq('name', data.name)
+          .single();
+
+        if (athleteData) {
+          athleteId = athleteData.id;
+        } else {
+          const { data: newAthlete } = await supabase
+            .from('athletes')
+            .insert([
+              {
+                evaluator_id: user.id,
+                name: data.name,
+                birth_date: data.birthDate || null,
+                sport: data.sport,
+                level: data.level,
+                dominance: data.dominance
+              }
+            ])
+            .select()
+            .single();
+          
+          if (newAthlete) athleteId = newAthlete.id;
+        }
+
+        // 2. Insert evaluation
         const { error } = await supabase.from('evaluations').insert([
           {
             evaluator_id: user.id,
+            athlete_id: athleteId,
             patient_name: data.name,
             patient_birth_date: data.birthDate || null,
             patient_age: parseInt(data.age) || null,
@@ -76,6 +130,9 @@ export default function Page() {
             eval_type: data.evalType,
             scores: data.scores,
             observations: data.observations,
+            total_score: totalScore,
+            percentage: parseFloat(percentage.toFixed(2)),
+            risk_status: riskStatus
           },
         ]);
 
@@ -83,17 +140,17 @@ export default function Page() {
           console.error('Error saving to Supabase:', error);
           // Fallback to local storage if DB fails
           const localEvals = JSON.parse(localStorage.getItem('prp_evaluations') || '[]');
-          localEvals.push({ ...data, id: Date.now() });
+          localEvals.push({ ...data, id: Date.now(), totalScore, percentage, riskStatus });
           localStorage.setItem('prp_evaluations', JSON.stringify(localEvals));
         }
       } else {
         // Fallback for demo
         const localEvals = JSON.parse(localStorage.getItem('prp_evaluations') || '[]');
-        localEvals.push({ ...data, id: Date.now() });
+        localEvals.push({ ...data, id: Date.now(), totalScore, percentage, riskStatus });
         localStorage.setItem('prp_evaluations', JSON.stringify(localEvals));
       }
 
-      setEvaluationData(data);
+      setEvaluationData({ ...data, totalScore, percentage, riskStatus });
       setView('dashboard');
     } catch (err) {
       console.error('Unexpected error saving evaluation:', err);

@@ -2,35 +2,12 @@
 
 import React, { useState } from 'react';
 import { User, Save, BarChart3 } from 'lucide-react';
+import { FMS_ITEMS, PRP_ITEMS } from '@/lib/constants';
 
 interface EvaluationFormProps {
   onSubmit: (data: any) => void;
   isSaving?: boolean;
 }
-
-const FMS_ITEMS = [
-  { id: 'deep_squat', label: 'Deep Squat', unilateral: false },
-  { id: 'hurdle_step', label: 'Hurdle Step', unilateral: true },
-  { id: 'inline_lunge', label: 'In-Line Lunge', unilateral: true },
-  { id: 'shoulder_mobility', label: 'Shoulder Mobility', unilateral: true },
-  { id: 'straight_leg_raise', label: 'Active Straight Leg Raise', unilateral: true },
-  { id: 'trunk_stability', label: 'Trunk Stability Push-Up', unilateral: false },
-  { id: 'rotary_stability', label: 'Rotary Stability', unilateral: true },
-];
-
-const PRP_ITEMS = [
-  { id: 'deep_squat', label: 'Agachamento Profundo', unilateral: false, category: 'Screening' },
-  { id: 'lunge', label: 'Afundo', unilateral: true, category: 'Screening' },
-  { id: 'ankle_mobility', label: 'Mobilidade de Tornozelo', unilateral: true, category: 'Mobilidade' },
-  { id: 'shoulder_mobility', label: 'Mobilidade de Ombro', unilateral: true, category: 'Mobilidade' },
-  { id: 'straight_leg_raise', label: 'Elevação da Perna Reta', unilateral: true, category: 'Mobilidade' },
-  { id: 'pelvic_bridge', label: 'Elevação da Pélvis', unilateral: false, category: 'Estabilidade' },
-  { id: 'side_plank', label: 'Prancha Lateral', unilateral: true, category: 'Estabilidade' },
-  { id: 'bird_dog', label: 'Estabilidade Rotacional (Bird Dog)', unilateral: true, category: 'Estabilidade' },
-  { id: 'single_leg_squat', label: 'Agachamento Unilateral', unilateral: true, category: 'Força' },
-  { id: 'lateral_slr', label: 'SLR Lateral', unilateral: true, category: 'Resistência' },
-  { id: 'calf_raise', label: 'Elevação Unilateral de Panturrilha', unilateral: true, category: 'Resistência' },
-];
 
 export default function EvaluationForm({ onSubmit, isSaving = false }: EvaluationFormProps) {
   const [eva, setEva] = useState(0);

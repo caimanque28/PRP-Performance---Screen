@@ -189,9 +189,16 @@ export default function EvaluationList({ onSelect, onNew }: EvaluationListProps)
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-bold text-slate-900 dark:text-white">{total}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase">Pts</span>
+                        <div className="flex flex-col">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-bold text-slate-900 dark:text-white">{ev.total_score ?? total}</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">Pts</span>
+                          </div>
+                          {ev.risk_status && (
+                            <span className={`text-[10px] font-bold ${ev.risk_status === 'Risco Baixo' ? 'text-green-600' : 'text-red-600'}`}>
+                              {ev.risk_status}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right">
